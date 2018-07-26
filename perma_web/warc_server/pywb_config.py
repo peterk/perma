@@ -233,6 +233,10 @@ class PermaRoute(archivalrouter.Route):
             if not Link(pk=guid).validate_access_token(cookie.value, 3600):
                 raise_not_found(wbrequest.wb_url, timestamp=wbrequest.wb_url.timestamp)
 
+        # check blacklist
+        if any(url in wbrequest.wb_url.url for url in settings.REFUSE_PLAYBACK):
+            raise_not_found(wbrequest.wb_url, timestamp=wbrequest.wb_url.timestamp)
+
         # check whether archive contains the requested URL
         try:
             urlkey = surt(wbrequest.wb_url.url)
@@ -447,8 +451,8 @@ class CachedLoader(BlockLoader):
     def load(self, url, offset=0, length=-1):
 
         # first try to fetch url contents from cache
-        cache_key = Link.get_warc_cache_key(url.split(settings.MEDIA_ROOT,1)[-1])
-
+        path = url.split(settings.MEDIA_ROOT,1)[-1]
+        cache_key = Link.get_warc_cache_key(path)
 
         mirror_name_cache_key = cache_key+'-mirror-name'
         mirror_name = ''
@@ -477,9 +481,9 @@ class CachedLoader(BlockLoader):
                     except (requests.ConnectionError, requests.Timeout, AssertionError) as e:
                         logging.info("Couldn't get from lockss: %s" % e)
 
-            # If url wasn't in LOCKSS yet or LOCKSS is disabled, fetch from local storage using super()
+            # If url wasn't in LOCKSS yet or LOCKSS is disabled, fetch from default storage
             if file_contents is None:
-                file_contents = super(CachedLoader, self).load(url).read()
+                file_contents = default_storage.open(path).read()
                 logging.debug("Got content from local disk")
 
             # cache file contents

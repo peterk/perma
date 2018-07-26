@@ -253,11 +253,12 @@ def scroll_browser(browser):
     """scroll to bottom of page"""
     # TODO: This doesn't scroll horizontally or scroll frames
     try:
+        print("XXXXXXXX")
         scroll_delay = browser.execute_script("""
             // Scroll down the page in a series of jumps the size of the window height.
             // The actual scrolling is done in a setTimeout with a 50ms delay so the browser has
             // time to render at each position.
-            var delay=50,
+            var delay=75,
                 height=document.body.scrollHeight,
                 jump=window.innerHeight,
                 scrollTo=function(scrollY){ window.scrollTo(0, scrollY) },
@@ -275,6 +276,7 @@ def scroll_browser(browser):
         # In python, wait for javascript background scrolling to finish.
         time.sleep(min(scroll_delay,1))
     except (WebDriverException, URLError):
+        logger.warn("Scrolling problem. Continuing...")
         # Don't panic if we can't scroll -- we've already captured something useful anyway.
         # WebDriverException: the page can't execute JS for some reason.
         # URLError: the headless browser has gone away for some reason.
